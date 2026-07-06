@@ -163,8 +163,11 @@ async def register(body: RegisterRequest, response: Response):
 async def login(body: LoginRequest, request: Request, response: Response):
     from db import db
     email = body.email.lower()
-    ip = request.client.host if request.client else "unknown"
-    key = f"{ip}:{email}"
+    # Use email as the primary identifier (safe behind K8s ingress with pod-hopping).
+    # If we want per-IP tracking later, read X-Forwarded-For here.
+    xff = (request.headers.get("x-forwarded-for") or "").split(",")[0].strip()
+    ip = xff or (request.client.host if request.client else "unknown")
+    key = f"email:{email}"
     attempts_doc = await db.login_attempts.find_one({"identifier": key}) or {}
     if attempts_doc.get("count", 0) >= 5:
         last = attempts_doc.get("last_at")
@@ -178,7 +181,7 @@ async def login(body: LoginRequest, request: Request, response: Response):
     if not user or not user.get("password_hash") or not verify_password(body.password, user["password_hash"]):
         await db.login_attempts.update_one(
             {"identifier": key},
-            {"$inc": {"count": 1}, "$set": {"last_at": now_utc().isoformat()}},
+            {"$inc": {"count": 1}, "$set": {"last_at": now_utc().isoformat(), "last_ip": ip}},
             upsert=True,
         )
         raise HTTPException(status_code=401, detail="Invalid email or password")
