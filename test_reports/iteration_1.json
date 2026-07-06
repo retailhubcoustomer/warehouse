@@ -1,0 +1,45 @@
+{
+  "summary": "First end-to-end backend test run for ShipLink multi-city warehouse marketplace. 36/37 pytest tests pass (97%). All critical flows are working: super-admin CRUD, RBAC boundaries, marketplace ordering, nearest-warehouse routing, WELCOME10 coupon math, full order lifecycle (placed -> accepted -> collected -> at_warehouse -> packed -> out_for_delivery -> delivered), Razorpay mock payments, and shop-app sync endpoints. The only failing test is brute-force lockout which exposes a real backend defect (see RCA).",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {
+        "endpoint": "POST /api/auth/login",
+        "issue": "Brute-force lockout does not trigger under load-balanced traffic. login_attempts identifier uses request.client.host which resolves to the ingress/proxy IP. Multiple backend pods behind the ingress each see a different proxy hop IP (observed 10.208.128.2 and 10.208.128.6). A single attacker's 5 attempts get split into two identifier docs (~2-3 each), and the >=5 threshold is never met from Python requests. Direct curl (single keep-alive connection sticky to one pod) does hit the threshold, so the bug is real but only visible when the client opens fresh connections. Fix: derive client IP from X-Forwarded-For header (or use email-only key)."
+      }
+    ]
+  },
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/backend_test.py",
+    "/app/test_reports/pytest/pytest_results.xml"
+  ],
+  "action_items": [
+    "Fix brute-force lockout key: read client IP from X-Forwarded-For (first hop) instead of request.client.host, OR use just the email as the identifier. Currently the lockout is unreliable across pods."
+  ],
+  "critical_code_review_comments": [
+    "auth.py login: identifier key {ip}:{email} uses request.client.host which is the ingress/proxy IP behind Kubernetes. Multiple backend pods see different proxy IPs, splitting the counter and defeating the lockout. Must use X-Forwarded-For (or trust a specific proxy header).",
+    "auth.py: hash_password uses bcrypt.gensalt() with default rounds (12) — fine. Passwords are correctly $2b$ format via bcrypt.hashpw.",
+    "server.py: CORSMiddleware is added AFTER routers via app.add_middleware — FastAPI/Starlette does allow this and middlewares wrap the whole app, but conventionally middleware is registered before include_router. Verified via curl that CORS still works.",
+    "admin.py /admin/users/{uid}/role: 'super_admin' promotion is blocked but no validation that role value is a valid Role literal — could store invalid roles.",
+    "warehouse.py assign-delivery: does not validate current order status before jumping to 'out_for_delivery'. A shop_owner-accepted order that has NOT been packed can still be jumped to out_for_delivery. Business flow states packed -> out_for_delivery; recommend enforcing status precondition.",
+    "warehouse.py assign-collection: does not push a state event that changes 'status' — it only appends a timeline entry with status='collection_assigned' but leaves order status unchanged. This is intentional but could confuse the state machine.",
+    "partner.py delivery/orders: filters status ∈ {out_for_delivery, packed} — 'packed' is included so the partner can see the order before it is technically out_for_delivery. OK.",
+    "payment.py: verify endpoint always succeeds (MOCKED). Correctly labeled with mock:true. When real Razorpay is added, must verify signature (razorpay_signature) before setting payment_status=paid.",
+    "shop.py sync_router: NO authentication on /api/sync/* endpoints. Anyone on the internet can bulk upsert products or push order statuses. For MVP with shared-DB simulation this is stated as intentional, but this must be gated by a shared secret / API key before shipping to production.",
+    "db.py seed_all: creates a large text file at /app/memory/test_credentials.md on every startup — writing to disk on every restart is wasteful and mixes docs with runtime. Consider seeding once.",
+    "marketplace.py place_order: does not decrement product stock. Placing large quantity orders keeps stock=100 forever. Also does not validate that requested qty <= product.stock.",
+    "marketplace.py place_order: coupon.min_order comparison uses subtotal but does not check coupon.expires_at.",
+    "auth.py get_current_user: password_hash exclusion is done, but user_sessions path (Google OAuth) returns the user via find_one WITH password_hash excluded already — consistent."
+  ],
+  "updated_files": [
+    "/app/backend/tests/backend_test.py (created)"
+  ],
+  "success_rate": {"backend": "97% (36/37)", "frontend": "not tested"},
+  "test_credentials": "admin@shiplink.com / Admin@123; wh1..wh6@shiplink.com / Warehouse@123; shop.owner@shiplink.com / Shop@123; delivery.<city>.<n>@shiplink.com / Partner@123; collection.<city>.<n>@shiplink.com / Partner@123",
+  "seed_data_creation": "Created via test: TEST_City_<hex>, TEST_Warehouse_A, TEST_Product_<hex>, TEST_SyncProduct_1/2, and several TEST_ customer accounts. Also several orders were placed and completed through the full lifecycle. All test data is prefixed 'TEST_' and can be cleaned by filtering names/emails starting with 'TEST_' / 'lockout_' / 'bf_'.",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Backend is otherwise healthy. Run pytest with -n 0 override because pytest.ini defaults to -n 2 --dist loadscope which breaks tests using a module-level STATE dict across xdist workers. Use: cd /app/backend && REACT_APP_BACKEND_URL=<url> python -m pytest tests/backend_test.py -n 0 -v. Existing seeded shops for Kolkata are 5 (Green Basket, Sharma Electronics, Style Bazaar, City Pharmacy, Bengal Sweets); shop_owner is attached to the first Kolkata shop. The nearest-warehouse routing for delivery_lat=22.5726 delivery_lng=88.3639 lands on Kolkata Warehouse A/B — the wh manager for that specific warehouse (wh1 or wh2) is found dynamically in TestOrderRoutingContext. Login lockout identifier is per (ingress-proxy-IP, email) and there are two backend pods behind the ingress with distinct IPs — Python requests load-balances across them.",
+  "rca_of_the_issue": "Brute-force lockout: in /app/backend/auth.py the login endpoint builds identifier = f'{ip}:{email}' where ip = request.client.host. In the preview environment there are multiple backend pods behind a Kubernetes ingress. Each fresh TCP connection may be routed to a different pod, and each pod's Starlette sees the *proxy hop* as request.client.host (observed IPs: 10.208.128.2 and 10.208.128.6). Concretely, running 8 same-email login failures with a Python requests.Session (which opens ~2 connections that are then reused independently) split into two docs: {10.208.128.2:...:count=4}, {10.208.128.6:...:count=4}. Neither reached 5 so the >=5 check never triggered — attacker gets unlimited attempts. curl keep-alive normally pins to one connection/pod and DOES reach 5 (verified: 6x401 then 429). MITIGATION: read the real client IP from the X-Forwarded-For header (take the first value) and use that in the identifier, or use only the email as the key. REPRODUCTION: python3 -c 'import requests, uuid; s=requests.Session(); email=f\"x_{uuid.uuid4().hex[:8]}@a.com\"; [print(i, s.post(BASE+\"/api/auth/login\", json={\"email\":email,\"password\":\"x\"}).status_code) for i in range(8)]' — you will see 8x401 (no 429). Then inspect db.login_attempts and you'll see the counts split across two IPs."
+}
