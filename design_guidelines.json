@@ -1,0 +1,125 @@
+{
+  "theme": "Light",
+  "archetype": "Archetype 4 (Swiss & High-Contrast)",
+  "typography": {
+    "headings": {
+      "fontFamily": "Cabinet Grotesk, sans-serif",
+      "weights": ["400", "800"],
+      "usage": "Use tight letter spacing (tracking-tight) for large headers. Never use generic fonts for headers."
+    },
+    "body": {
+      "fontFamily": "IBM Plex Sans, sans-serif",
+      "weights": ["400", "500", "600"],
+      "usage": "Use for all data tables, inputs, and general reading."
+    },
+    "scale": {
+      "h1": "text-4xl sm:text-5xl lg:text-6xl tracking-tight font-black",
+      "h2": "text-2xl sm:text-3xl lg:text-4xl tracking-tight font-extrabold",
+      "h3": "text-xl sm:text-2xl font-bold",
+      "h4": "text-lg sm:text-xl font-semibold",
+      "body": "text-base leading-relaxed",
+      "small": "text-sm",
+      "overline": "text-xs uppercase tracking-[0.2em] font-semibold"
+    }
+  },
+  "colors": {
+    "background": {
+      "primary": "#FFFFFF",
+      "secondary": "#F4F4F5",
+      "tertiary": "#E4E4E7"
+    },
+    "text": {
+      "primary": "#09090B",
+      "secondary": "#52525B",
+      "muted": "#A1A1AA"
+    },
+    "brand": {
+      "primary": "#002FA7",
+      "primaryHover": "#00227A",
+      "accent": "#ECC94B"
+    },
+    "status": {
+      "success": "#22C55E",
+      "warning": "#ECC94B",
+      "error": "#E53E3E",
+      "info": "#3B82F6"
+    },
+    "border": "#E4E4E7"
+  },
+  "spacing_and_layout": {
+    "general": "Generous spacing for marketplace (p-8, p-12). High density 'Control Room' grid for admin dashboards (gap-4).",
+    "radius": "Sharp or minimal. max 8px (rounded-md) for inputs, rounded-none for large containers.",
+    "dashboard_grid": "grid-cols-1 md:grid-cols-3 lg:grid-cols-4. Strict hierarchy.",
+    "marketplace_grid": "Bento Grid style. Asymmetry in hero sections."
+  },
+  "surface_strategies": {
+    "dashboards": "Grid Borders (Technical Look). Flat backgrounds, 1px subtle border, no shadow.",
+    "headers": "Crystal Glassmorphism: bg-white/70 backdrop-blur-xl border-b border-zinc-200/50.",
+    "cards": "Flat, rectangular, 1px border. On hover: -translate-y-1, shadow-lg, border color darkens."
+  },
+  "components": {
+    "buttons": "High contrast. Primary: bg-[#002FA7] text-white hover:bg-[#00227A].",
+    "inputs": "Shadcn standard, flat, 1px border. Focus state: ring-2 ring-[#002FA7].",
+    "maps": "OpenStreetMap with Leaflet. Map style should be minimal light (e.g., CartoDB Positron tiles if possible) to match the high-contrast aesthetic.",
+    "tables": "Dense. IBM Plex Sans font. 1px borders dividing rows, no alternating background colors. Hover state on rows.",
+    "charts": "Recharts with brand colors. Use #002FA7 for primary metrics, #ECC94B for secondary."
+  },
+  "motion": {
+    "hover": "Explicit hover states for all interactive elements. transition: transform 0.2s ease, opacity 0.2s ease.",
+    "page_load": "Staggered entrance animations for dashboard widgets and marketplace product grids using framer-motion."
+  },
+  "assets": {
+    "icons": {
+      "library": "@phosphor-icons/react",
+      "style": "Duotone or Regular weight. High legibility."
+    },
+    "image_urls": [
+      {
+        "category": "Hero/Login Background",
+        "url": "https://images.unsplash.com/photo-1626908013351-800ddd734b8a?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NTYxODF8MHwxfHNlYXJjaHwxfHxtb2Rlcm4lMjBhYnN0cmFjdCUyMHRlY2glMjBiYWNrZ3JvdW5kJTIwbGlnaHR8ZW58MHx8fHwxNzgzMzgwMDMwfDA&ixlib=rb-4.1.0&q=85",
+        "description": "Modern abstract tech background"
+      },
+      {
+        "category": "Marketplace Product 1",
+        "url": "https://images.unsplash.com/photo-1760443728264-cb7bd1a83108?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDk1Nzd8MHwxfHNlYXJjaHw0fHxtaW5pbWFsaXN0JTIwcHJvZHVjdCUyMGVsZWN0cm9uaWNzfGVufDB8fHx8MTc4MzM4MDAzMHww&ixlib=rb-4.1.0&q=85",
+        "description": "Modern smartphone on dark background"
+      },
+      {
+        "category": "Marketplace Product 2",
+        "url": "https://images.unsplash.com/photo-1511389290465-d11bafd4c1df?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDk1Nzd8MHwxfHNlYXJjaHwxfHxtaW5pbWFsaXN0JTIwcHJvZHVjdCUyMGVsZWN0cm9uaWNzfGVufDB8fHx8MTc4MzM4MDAzMHww&ixlib=rb-4.1.0&q=85",
+        "description": "Black Marshal speaker"
+      },
+      {
+        "category": "Marketplace Product 3",
+        "url": "https://images.unsplash.com/photo-1778257911549-d83c1698bde9?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDk1Nzd8MHwxfHNlYXJjaHwzfHxtaW5pbWFsaXN0JTIwcHJvZHVjdCUyMGVsZWN0cm9uaWNzfGVufDB8fHx8MTc4MzM4MDAzMHww&ixlib=rb-4.1.0&q=85",
+        "description": "Black over-ear headphones"
+      },
+      {
+        "category": "Warehouse Team/Manager",
+        "url": "https://images.unsplash.com/photo-1664382953403-fc1ac77073a0?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjY2NzN8MHwxfHNlYXJjaHwxfHx3YXJlaG91c2UlMjBsb2dpc3RpY3MlMjB3b3JrZXJzfGVufDB8fHx8MTc4MzM4MDAzMHww&ixlib=rb-4.1.0&q=85",
+        "description": "Warehouse workers"
+      },
+      {
+        "category": "Delivery Partner Context",
+        "url": "https://images.unsplash.com/photo-1526367790999-0150786686a2?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2ODh8MHwxfHNlYXJjaHwxfHxjb3VyaWVyJTIwZGVsaXZlcnklMjBwZXJzb24lMjBvdXRkb29yc3xlbnwwfHx8fDE3ODMzODAwMzB8MA&ixlib=rb-4.1.0&q=85",
+        "description": "Courier outdoors"
+      }
+    ]
+  },
+  "testing": {
+    "attributes": "All interactive and key informational elements MUST include a data-testid attribute in kebab-case, role-based."
+  },
+  "instructions_to_main_agent": [
+    "Install @phosphor-icons/react for icons.",
+    "Use Shadcn UI extensively for the control room layouts, but customize it to remove default shadows and enforce sharp edges or max 8px border-radius.",
+    "Implement Role-Based Access Control (RBAC) routing from a single single-sign-on (SSO) or login page.",
+    "Integrate Leaflet map using OpenStreetMap tiles (prefer a light minimalistic map tile source if available) for the live map view.",
+    "For the Super Admin and Warehouse Manager dashboard, implement a 'Control Room' grid layout using grid-cols-1 md:grid-cols-3 lg:grid-cols-4 with gap-4 or gap-6. Make it data-dense and strictly aligned.",
+    "For the Customer Marketplace, use a 'Bento' grid style with wide gaps (gap-8) and generous padding to present products elegantly and maintain a clear path to purchase.",
+    "For the mobile-style Partner dashboards, use large typography, high contrast, and thumb-friendly interactions.",
+    "Use the provided image URLs strictly. Do not use placeholder services like via.placeholder.com.",
+    "Create high-contrast active states. Button text must be explicitly declared on hover (e.g., hover:text-white).",
+    "Ensure any sticky headers use Crystal Glassmorphism (bg-white/70 backdrop-blur-xl) or a solid flat border if they don't overlap content.",
+    "Always apply data-testid to critical elements for testing."
+  ]
+}
