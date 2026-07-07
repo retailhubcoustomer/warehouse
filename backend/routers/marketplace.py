@@ -4,7 +4,7 @@ from typing import Optional, List
 
 from auth import get_current_user, require_roles
 from geo import location_provider
-from models import OrderCreate, RatingRequest, gen_id, now_utc
+from models import OrderCreate, RatingRequest, WatchlistToggle, gen_id, now_utc
 
 
 router = APIRouter(prefix="/api/marketplace", tags=["marketplace"])
@@ -173,3 +173,146 @@ async def rate_order(oid: str, body: RatingRequest, user: dict = Depends(get_cur
                                     {"$set": {"rating": round(new_rating, 2),
                                               "reviews_count": new_count}})
     return {"ok": True}
+
+
+
+# ==================== Transport ====================
+@router.get("/transport")
+async def list_transport(city_id: Optional[str] = None, vehicle_type: Optional[str] = None,
+                          q: Optional[str] = None, limit: int = 100):
+    from db import db
+    query = {"is_active": True}
+    if city_id:
+        query["city_id"] = city_id
+    if vehicle_type and vehicle_type != "all":
+        query["vehicle_type"] = vehicle_type
+    if q:
+        query["owner_name"] = {"$regex": q, "$options": "i"}
+    return await db.transport_providers.find(query, {"_id": 0}).limit(limit).to_list(limit)
+
+
+@router.get("/transport/{pid}")
+async def get_transport(pid: str):
+    from db import db
+    doc = await db.transport_providers.find_one({"provider_id": pid}, {"_id": 0})
+    if not doc:
+        raise HTTPException(status_code=404, detail="Transport provider not found")
+    return doc
+
+
+@router.get("/transport-categories")
+async def transport_categories():
+    return [
+        {"id": "all", "name": "All", "icon": "MapPin"},
+        {"id": "toto", "name": "Toto", "icon": "Bicycle"},
+        {"id": "auto", "name": "Auto", "icon": "Car"},
+        {"id": "bike", "name": "Bike", "icon": "MotorcycleHelmet"},
+        {"id": "car", "name": "Car", "icon": "Car"},
+        {"id": "van", "name": "Van", "icon": "Van"},
+        {"id": "pickup", "name": "Pickup", "icon": "Truck"},
+        {"id": "mini_truck", "name": "Mini Truck", "icon": "Truck"},
+    ]
+
+
+# ==================== Helpers (Service Providers) ====================
+@router.get("/helpers")
+async def list_helpers(city_id: Optional[str] = None, profession: Optional[str] = None,
+                        q: Optional[str] = None, limit: int = 100):
+    from db import db
+    query = {"is_active": True}
+    if city_id:
+        query["city_id"] = city_id
+    if profession and profession != "all":
+        query["profession"] = profession
+    if q:
+        query["name"] = {"$regex": q, "$options": "i"}
+    return await db.helper_providers.find(query, {"_id": 0}).limit(limit).to_list(limit)
+
+
+@router.get("/helpers/{hid}")
+async def get_helper(hid: str):
+    from db import db
+    doc = await db.helper_providers.find_one({"helper_id": hid}, {"_id": 0})
+    if not doc:
+        raise HTTPException(status_code=404, detail="Helper not found")
+    return doc
+
+
+@router.get("/helper-categories")
+async def helper_categories():
+    return [
+        {"id": "all", "name": "All"},
+        {"id": "plumber", "name": "Plumber"},
+        {"id": "electrician", "name": "Electrician"},
+        {"id": "carpenter", "name": "Carpenter (Kathmistri)"},
+        {"id": "mason", "name": "Mason"},
+        {"id": "painter", "name": "Painter"},
+        {"id": "mechanic", "name": "Mechanic"},
+        {"id": "ac_repair", "name": "AC Repair"},
+        {"id": "cleaning", "name": "Cleaning Service"},
+        {"id": "other", "name": "Other"},
+    ]
+
+
+# ==================== Watchlist ====================
+@router.get("/watchlist")
+async def get_watchlist(user: dict = Depends(get_current_user)):
+    from db import db
+    entries = await db.watchlist.find({"user_id": user["user_id"]},
+                                        {"_id": 0}).sort("created_at", -1).to_list(500)
+
+    # Hydrate each entry with the referenced entity so the frontend can render cards
+    async def hydrate(e):
+        t = e["entity_type"]
+        eid = e["entity_id"]
+        if t == "shop":
+            d = await db.shops.find_one({"shop_id": eid}, {"_id": 0})
+        elif t == "product":
+            d = await db.products.find_one({"product_id": eid}, {"_id": 0})
+            if d:
+                s = await db.shops.find_one({"shop_id": d["shop_id"]},
+                                              {"_id": 0, "name": 1, "city_id": 1})
+                if s:
+                    d["shop_name"] = s.get("name")
+        elif t == "transport":
+            d = await db.transport_providers.find_one({"provider_id": eid}, {"_id": 0})
+        elif t == "helper":
+            d = await db.helper_providers.find_one({"helper_id": eid}, {"_id": 0})
+        else:
+            d = None
+        return {**e, "entity": d}
+
+    hydrated = []
+    for e in entries:
+        hydrated.append(await hydrate(e))
+    return hydrated
+
+
+@router.post("/watchlist/toggle")
+async def toggle_watchlist(body: WatchlistToggle, user: dict = Depends(get_current_user)):
+    from db import db
+    existing = await db.watchlist.find_one({"user_id": user["user_id"],
+                                              "entity_type": body.entity_type,
+                                              "entity_id": body.entity_id})
+    if existing:
+        await db.watchlist.delete_one({"_id": existing["_id"]})
+        return {"saved": False}
+    await db.watchlist.insert_one({
+        "user_id": user["user_id"],
+        "entity_type": body.entity_type,
+        "entity_id": body.entity_id,
+        "created_at": now_utc().isoformat(),
+    })
+    return {"saved": True}
+
+
+@router.get("/watchlist/ids")
+async def watchlist_ids(user: dict = Depends(get_current_user)):
+    """Return only the IDs the current user has saved, grouped by type — for fast heart-toggle UI."""
+    from db import db
+    entries = await db.watchlist.find({"user_id": user["user_id"]},
+                                        {"_id": 0, "entity_type": 1, "entity_id": 1}).to_list(1000)
+    out = {"shop": [], "product": [], "transport": [], "helper": []}
+    for e in entries:
+        out.setdefault(e["entity_type"], []).append(e["entity_id"])
+    return out

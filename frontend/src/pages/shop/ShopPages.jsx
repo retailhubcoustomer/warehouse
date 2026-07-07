@@ -6,11 +6,21 @@ import { Package, Storefront } from "@phosphor-icons/react";
 export function ShopOverview() {
   const [d, setD] = useState(null);
   const [me, setMe] = useState(null);
-  useEffect(() => {
+  const load = () => {
     api.get("/shop/dashboard").then((r) => setD(r.data));
     api.get("/shop/me").then((r) => setMe(r.data));
-  }, []);
+  };
+  useEffect(() => { load(); }, []);
+  const setStatus = async (status) => {
+    await api.patch("/shop/status", { status });
+    load();
+  };
   if (!d || !me) return <div className="text-zinc-500">Loading…</div>;
+  const statusMap = {
+    open: { label: "🟢 Open Now", cls: "bg-emerald-500 text-white border-emerald-500" },
+    busy: { label: "🟡 Busy", cls: "bg-amber-500 text-white border-amber-500" },
+    closed: { label: "🔴 Closed", cls: "bg-red-500 text-white border-red-500" },
+  };
   return (
     <div>
       <div className="mb-8">
@@ -21,18 +31,44 @@ export function ShopOverview() {
           <span className="text-xs">Any change in your Shop App shows here instantly.</span>
         </p>
       </div>
+
+      {/* Status toggle */}
+      <div className="border border-zinc-200 rounded-2xl p-6 mb-6 flex flex-wrap items-center gap-3">
+        <div>
+          <div className="overline">SHOP STATUS</div>
+          <div className="font-semibold mt-1">Customers see this on your shop page.</div>
+        </div>
+        <div className="flex gap-2 ml-auto">
+          {["open", "busy", "closed"].map((s) => (
+            <button
+              key={s}
+              onClick={() => setStatus(s)}
+              data-testid={`btn-status-${s}`}
+              className={`px-4 py-2 rounded-full text-sm font-semibold border transition ${
+                me.status === s ? statusMap[s].cls : "border-zinc-200 text-zinc-700 hover:border-zinc-400"
+              }`}
+            >
+              {statusMap[s].label}
+            </button>
+          ))}
+        </div>
+      </div>
+
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <StatTile label="PRODUCTS" value={d.products} testid="tile-products" />
         <StatTile label="ORDERS TODAY" value={d.orders_today} testid="tile-today" />
         <StatTile label="ACTIVE" value={d.active} testid="tile-active" />
         <StatTile label="REVENUE" value={<INR value={d.revenue} />} testid="tile-revenue" />
       </div>
-      <div className="mt-8 border border-zinc-200 p-6">
+      <div className="mt-8 border border-zinc-200 rounded-2xl p-6">
         <div className="overline mb-4">SHOP INFO</div>
         <div className="grid md:grid-cols-3 gap-6 text-sm">
           <div><div className="text-zinc-500">Category</div><div className="font-semibold capitalize">{me.category}</div></div>
           <div><div className="text-zinc-500">Address</div><div className="font-semibold">{me.address}</div></div>
-          <div><div className="text-zinc-500">Rating</div><div className="font-semibold">★ {Number(me.rating).toFixed(1)} · {me.reviews_count} reviews</div></div>
+          <div><div className="text-zinc-500">Phone</div><div className="font-semibold">{me.phone || "-"}</div></div>
+          <div><div className="text-zinc-500">Opens</div><div className="font-semibold">{me.opening_hours}</div></div>
+          <div><div className="text-zinc-500">Closes</div><div className="font-semibold">{me.closing_hours}</div></div>
+          <div><div className="text-zinc-500">Delivery time</div><div className="font-semibold">{me.delivery_time_min} min</div></div>
         </div>
       </div>
     </div>

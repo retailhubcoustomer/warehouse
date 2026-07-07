@@ -3,7 +3,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from typing import Optional
 
 from auth import get_current_user, require_roles
-from models import ProductCreate, gen_id, now_utc
+from models import ProductCreate, ShopStatusUpdate, gen_id, now_utc
 
 
 router = APIRouter(prefix="/api/shop", tags=["shop"])
@@ -22,6 +22,30 @@ async def shop_me(user: dict = Depends(require_roles("shop_owner"))):
     sid = await _shop(user)
     shop = await db.shops.find_one({"shop_id": sid}, {"_id": 0})
     return shop
+
+
+@router.patch("/status")
+async def update_shop_status(body: ShopStatusUpdate,
+                              user: dict = Depends(require_roles("shop_owner"))):
+    from db import db
+    sid = await _shop(user)
+    await db.shops.update_one({"shop_id": sid},
+                                {"$set": {"status": body.status,
+                                          "updated_at": now_utc().isoformat()}})
+    return {"ok": True, "status": body.status}
+
+
+@router.patch("/settings")
+async def update_shop_settings(body: dict, user: dict = Depends(require_roles("shop_owner"))):
+    from db import db
+    sid = await _shop(user)
+    allowed = {"phone", "opening_hours", "closing_hours", "delivery_time_min",
+                "business_hours", "address"}
+    update = {k: v for k, v in body.items() if k in allowed}
+    if update:
+        update["updated_at"] = now_utc().isoformat()
+        await db.shops.update_one({"shop_id": sid}, {"$set": update})
+    return {"ok": True, "updated": list(update.keys())}
 
 
 @router.get("/dashboard")

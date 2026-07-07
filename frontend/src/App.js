@@ -4,6 +4,7 @@ import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-route
 
 import { AuthProvider } from "@/context/AuthContext";
 import { CartProvider } from "@/context/CartContext";
+import { WatchlistProvider } from "@/context/WatchlistContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import AuthCallback from "@/components/AuthCallback";
 import DashboardLayout from "@/components/DashboardLayout";
@@ -17,6 +18,9 @@ import CustomerHome from "@/pages/customer/Home";
 import ShopDetail from "@/pages/customer/ShopDetail";
 import Cart from "@/pages/customer/Cart";
 import { MyOrders, OrderDetail } from "@/pages/customer/Orders";
+import Transport from "@/pages/customer/Transport";
+import Helper from "@/pages/customer/Helper";
+import Watchlist from "@/pages/customer/Watchlist";
 
 import AdminOverview from "@/pages/admin/Overview";
 import LiveMap from "@/pages/admin/LiveMap";
@@ -55,6 +59,9 @@ function Router() {
       <Route element={<PublicLayout />}>
         <Route index element={<CustomerHome />} />
         <Route path="/shops/:shopId" element={<ShopDetail />} />
+        <Route path="/transport" element={<Transport />} />
+        <Route path="/helper" element={<Helper />} />
+        <Route path="/watchlist" element={<Watchlist />} />
         <Route path="/cart" element={<Cart />} />
         <Route path="/my-orders" element={
           <ProtectedRoute roles={["customer", "shop_owner", "super_admin",
@@ -142,9 +149,11 @@ function App() {
     <div className="App">
       <BrowserRouter>
         <AuthProvider>
-          <CartProvider>
-            <Router />
-          </CartProvider>
+          <WatchlistProvider>
+            <CartProvider>
+              <Router />
+            </CartProvider>
+          </WatchlistProvider>
         </AuthProvider>
       </BrowserRouter>
     </div>

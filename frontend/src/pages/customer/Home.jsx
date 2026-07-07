@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { Link, useNavigate, useOutletContext } from "react-router-dom";
 import api from "@/lib/api";
+import { HeartButton } from "@/context/WatchlistContext";
 import {
   MagnifyingGlass,
   Star,
@@ -292,32 +293,46 @@ export default function CustomerHome() {
 
 function ShopCard({ shop }) {
   return (
-    <Link
-      to={`/shops/${shop.shop_id}`}
-      data-testid={`shop-${shop.shop_id}`}
-      className="group block bg-white rounded-2xl overflow-hidden border border-zinc-200 hover:border-orange-400 hover:shadow-xl hover:shadow-orange-500/10 transition-all"
-    >
-      <div className="relative aspect-[16/10] bg-zinc-100">
-        <div
-          className="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-105"
-          style={{ backgroundImage: `url(${shop.image_url})` }}
-        />
-        <div className="absolute top-2 right-2 chip chip-yellow inline-flex items-center gap-1">
-          <Star size={11} weight="fill" /> {Number(shop.rating || 0).toFixed(1)}
-        </div>
+    <div className="relative">
+      <div className="absolute top-3 right-3 z-10">
+        <HeartButton type="shop" id={shop.shop_id} testid={`heart-shop-${shop.shop_id}`} />
       </div>
-      <div className="p-4">
-        <div className="font-display font-bold text-base tracking-tight text-zinc-900 leading-tight">
-          {shop.name}
+      <Link
+        to={`/shops/${shop.shop_id}`}
+        data-testid={`shop-${shop.shop_id}`}
+        className="group block bg-white rounded-2xl overflow-hidden border border-zinc-200 hover:border-orange-400 hover:shadow-xl hover:shadow-orange-500/10 transition-all"
+      >
+        <div className="relative aspect-[16/10] bg-zinc-100">
+          <div
+            className="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-105"
+            style={{ backgroundImage: `url(${shop.image_url})` }}
+          />
+          <div className="absolute top-2 left-2 chip chip-yellow inline-flex items-center gap-1">
+            <Star size={11} weight="fill" /> {Number(shop.rating || 0).toFixed(1)}
+          </div>
         </div>
-        <div className="text-xs text-zinc-500 mt-1 capitalize">
-          {shop.category} · {shop.business_hours}
+        <div className="p-4">
+          <div className="flex items-start justify-between gap-2">
+            <div className="min-w-0">
+              <div className="font-display font-bold text-base tracking-tight text-zinc-900 leading-tight truncate">
+                {shop.name}
+              </div>
+              <div className="text-xs text-zinc-500 mt-1 capitalize">
+                {shop.category} · {shop.delivery_time_min || 30} min
+              </div>
+            </div>
+            {shop.status && (
+              <span className="chip text-[10px] py-0.5 px-2">
+                {shop.status === "open" ? "🟢" : shop.status === "busy" ? "🟡" : "🔴"}
+              </span>
+            )}
+          </div>
+          <div className="mt-3 flex items-center gap-2 text-xs text-zinc-500">
+            <MapPin size={12} weight="duotone" />
+            <span className="truncate">{shop.address}</span>
+          </div>
         </div>
-        <div className="mt-3 flex items-center gap-2 text-xs text-zinc-500">
-          <MapPin size={12} weight="duotone" />
-          <span className="truncate">{shop.address}</span>
-        </div>
-      </div>
-    </Link>
+      </Link>
+    </div>
   );
 }

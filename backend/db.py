@@ -33,6 +33,13 @@ async def ensure_indexes() -> None:
     await db.orders.create_index("warehouse_id")
     await db.orders.create_index("status")
     await db.coupons.create_index("code", unique=True)
+    await db.transport_providers.create_index("provider_id", unique=True)
+    await db.transport_providers.create_index("city_id")
+    await db.helper_providers.create_index("helper_id", unique=True)
+    await db.helper_providers.create_index("city_id")
+    await db.watchlist.create_index([("user_id", 1), ("entity_type", 1), ("entity_id", 1)],
+                                      unique=True)
+    await db.watchlist.create_index("user_id")
 
 
 # ------------------ seed helpers ------------------
@@ -256,13 +263,135 @@ async def seed_coupons() -> None:
     ])
 
 
+TRANSPORT_TEMPLATE = [
+    ("Rajesh Kumar", "toto", "Toto EV, seats 4",
+     "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=600&q=80",
+     "linear-gradient(135deg,#22c55e,#15803d)"),
+    ("Mohammed Anwar", "auto", "CNG Auto Rickshaw",
+     "https://images.unsplash.com/photo-1567337712310-cfab6d3c9d5d?w=600&q=80",
+     "linear-gradient(135deg,#fbbf24,#d97706)"),
+    ("Bikash Ghosh", "bike", "Delivery bike (Splendor)",
+     "https://images.unsplash.com/photo-1568772585407-9361f9bf3a87?w=600&q=80",
+     "linear-gradient(135deg,#ef4444,#b91c1c)"),
+    ("Suman Das", "car", "Sedan (Dzire)",
+     "https://images.unsplash.com/photo-1502877338535-766e1452684a?w=600&q=80",
+     "linear-gradient(135deg,#334155,#0f172a)"),
+    ("Rina Devi", "van", "Cargo van (Bolero)",
+     "https://images.unsplash.com/photo-1618434392039-5b6dd8ca1ed6?w=600&q=80",
+     "linear-gradient(135deg,#f97316,#c2410c)"),
+    ("Ashok Yadav", "pickup", "Tata Ace pickup",
+     "https://images.unsplash.com/photo-1601924357840-6c0dabf3f10f?w=600&q=80",
+     "linear-gradient(135deg,#8b5cf6,#5b21b6)"),
+    ("Sunil Prasad", "mini_truck", "Mahindra Mini Truck",
+     "https://images.unsplash.com/photo-1519003722824-194d4455a60c?w=600&q=80",
+     "linear-gradient(135deg,#0ea5e9,#0369a1)"),
+]
+
+HELPER_TEMPLATE = [
+    ("Anil Sharma", "plumber", 8, "Complete pipe fitting, leak fixing, geyser install",
+     "https://images.unsplash.com/photo-1607472586893-edb57bdc0e39?w=600&q=80", 250,
+     "linear-gradient(135deg,#0ea5e9,#0369a1)"),
+    ("Deepak Verma", "electrician", 12, "House wiring, ceiling fan, MCB & inverter repair",
+     "https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=600&q=80", 300,
+     "linear-gradient(135deg,#f59e0b,#d97706)"),
+    ("Rakesh Mistry", "carpenter", 15, "Kathmistri — furniture, door frames, cupboards",
+     "https://images.unsplash.com/photo-1504148455328-c376907d081c?w=600&q=80", 400,
+     "linear-gradient(135deg,#b45309,#78350f)"),
+    ("Nazir Ali", "mason", 20, "Brick work, plaster, tile fitting",
+     "https://images.unsplash.com/photo-1581092919535-fdad0f47b6f8?w=600&q=80", 500,
+     "linear-gradient(135deg,#78716c,#44403c)"),
+    ("Salim Ansari", "painter", 6, "Interior + exterior painting, texture work",
+     "https://images.unsplash.com/photo-1562259949-e8e7689d7828?w=600&q=80", 350,
+     "linear-gradient(135deg,#a855f7,#7c3aed)"),
+    ("Ramesh Yadav", "mechanic", 10, "2-wheeler / 4-wheeler home service",
+     "https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?w=600&q=80", 300,
+     "linear-gradient(135deg,#334155,#0f172a)"),
+    ("Pintu Karmakar", "ac_repair", 7, "Split & window AC service, gas top-up",
+     "https://images.unsplash.com/photo-1585771724684-38269d6919a1?w=600&q=80", 500,
+     "linear-gradient(135deg,#38bdf8,#0284c7)"),
+    ("Sabita Devi", "cleaning", 4, "Home deep-clean, kitchen degreasing, bathroom",
+     "https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=600&q=80", 200,
+     "linear-gradient(135deg,#10b981,#047857)"),
+    ("Jhantu Mondal", "other", 5, "General local worker — loading, gardening, misc",
+     "https://images.unsplash.com/photo-1521737604893-d14cc237f11d?w=600&q=80", 200,
+     "linear-gradient(135deg,#f43f5e,#be123c)"),
+]
+
+
+async def seed_transport_and_helpers() -> None:
+    if await db.transport_providers.count_documents({}) == 0:
+        cities = await db.cities.find({}, {"_id": 0}).to_list(50)
+        for c in cities:
+            for i, (name, vtype, desc, photo, grad) in enumerate(TRANSPORT_TEMPLATE):
+                await db.transport_providers.insert_one({
+                    "provider_id": gen_id("trp"),
+                    "owner_name": f"{name}", "photo_url": photo,
+                    "gradient": grad,
+                    "vehicle_type": vtype,
+                    "address": f"Ward {i+1}, {c['name']}",
+                    "city_id": c["city_id"],
+                    "lat": c["lat"] + (i - 3) * 0.008,
+                    "lng": c["lng"] + (i - 3) * 0.01,
+                    "phone": f"+9198{5000000 + hash((c['name'], i)) % 9000000}",
+                    "service_area": f"Within 10 km of {c['name']}",
+                    "availability": "available" if i % 3 != 2 else "busy",
+                    "rating": 4.0 + (i % 5) * 0.15,
+                    "reviews_count": 12 + i * 5,
+                    "description": desc,
+                    "price_hint": f"₹{10 + i * 5}/km",
+                    "is_active": True,
+                    "created_at": now_utc().isoformat(),
+                })
+    if await db.helper_providers.count_documents({}) == 0:
+        cities = await db.cities.find({}, {"_id": 0}).to_list(50)
+        for c in cities:
+            for i, (name, prof, exp, desc, photo, rate, grad) in enumerate(HELPER_TEMPLATE):
+                await db.helper_providers.insert_one({
+                    "helper_id": gen_id("hlp"),
+                    "name": name, "photo_url": photo,
+                    "gradient": grad,
+                    "profession": prof,
+                    "address": f"Ward {i+2}, {c['name']}",
+                    "city_id": c["city_id"],
+                    "lat": c["lat"] + (i - 4) * 0.006,
+                    "lng": c["lng"] + (i - 4) * 0.008,
+                    "phone": f"+9197{4000000 + hash((c['name'], prof)) % 9000000}",
+                    "experience_years": exp,
+                    "service_area": f"Within 8 km of {c['name']}",
+                    "availability": "available" if i % 4 != 3 else "busy",
+                    "rating": 4.0 + (i % 5) * 0.15,
+                    "reviews_count": 8 + i * 3,
+                    "description": desc,
+                    "hourly_rate": rate,
+                    "is_active": True,
+                    "created_at": now_utc().isoformat(),
+                })
+
+
+async def backfill_shop_fields() -> None:
+    """Add phone / status / opening_hours / closing_hours / delivery_time_min to existing shops."""
+    cursor = db.shops.find({"phone": {"$exists": False}}, {"_id": 1, "shop_id": 1, "name": 1})
+    async for s in cursor:
+        # Generate a stable phone from shop_id hash
+        h = abs(hash(s["shop_id"]))
+        await db.shops.update_one({"_id": s["_id"]}, {"$set": {
+            "phone": f"+9196{(3000000 + h) % 9000000:07d}",
+            "opening_hours": "9:00 AM",
+            "closing_hours": "10:00 PM",
+            "delivery_time_min": 30,
+            "status": "open",
+        }})
+
+
 async def seed_all() -> None:
     await ensure_indexes()
     await seed_admin()
     await seed_geography()
     await seed_shops_and_products()
+    await backfill_shop_fields()
     await seed_partner_accounts()
     await seed_coupons()
+    await seed_transport_and_helpers()
     # persist test credentials
     creds_path = Path("/app/memory/test_credentials.md")
     creds_path.parent.mkdir(parents=True, exist_ok=True)

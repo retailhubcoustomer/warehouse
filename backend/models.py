@@ -121,6 +121,11 @@ class ShopCreate(Base):
     category: str = "grocery"
     image_url: Optional[str] = None
     business_hours: str = "9:00 AM - 10:00 PM"
+    phone: Optional[str] = None
+    opening_hours: str = "9:00 AM"
+    closing_hours: str = "10:00 PM"
+    delivery_time_min: int = 30
+    status: Literal["open", "busy", "closed"] = "open"
 
 
 class Shop(ShopCreate):
@@ -131,6 +136,66 @@ class Shop(ShopCreate):
     is_active: bool = True
     warehouse_id: Optional[str] = None  # nearest warehouse
     created_at: datetime = Field(default_factory=now_utc)
+
+
+# ---------------- Transport & Helpers ----------------
+TransportType = Literal["toto", "auto", "bike", "car", "van", "pickup", "mini_truck"]
+
+
+class TransportProvider(Base):
+    provider_id: str
+    owner_name: str
+    photo_url: Optional[str] = None
+    vehicle_type: TransportType
+    address: str
+    city_id: str
+    lat: Optional[float] = None
+    lng: Optional[float] = None
+    phone: str
+    service_area: str
+    availability: Literal["available", "busy", "offline"] = "available"
+    rating: float = 4.4
+    reviews_count: int = 0
+    description: str = ""
+    price_hint: Optional[str] = None
+    is_active: bool = True
+    created_at: datetime = Field(default_factory=now_utc)
+
+
+HelperType = Literal[
+    "plumber", "electrician", "carpenter", "mason", "painter",
+    "mechanic", "ac_repair", "cleaning", "other",
+]
+
+
+class HelperProvider(Base):
+    helper_id: str
+    name: str
+    photo_url: Optional[str] = None
+    profession: HelperType
+    address: str
+    city_id: str
+    lat: Optional[float] = None
+    lng: Optional[float] = None
+    phone: str
+    experience_years: int = 1
+    service_area: str
+    availability: Literal["available", "busy", "offline"] = "available"
+    rating: float = 4.3
+    reviews_count: int = 0
+    description: str = ""
+    hourly_rate: Optional[int] = None
+    is_active: bool = True
+    created_at: datetime = Field(default_factory=now_utc)
+
+
+class WatchlistToggle(Base):
+    entity_type: Literal["shop", "product", "transport", "helper"]
+    entity_id: str
+
+
+class ShopStatusUpdate(Base):
+    status: Literal["open", "busy", "closed"]
 
 
 # ---------------- Products ----------------

@@ -11,6 +11,8 @@ import {
   CaretDown,
   Truck,
   Package,
+  Wrench,
+  Heart,
 } from "@phosphor-icons/react";
 
 export default function PublicLayout() {
@@ -98,10 +100,16 @@ export default function PublicLayout() {
           </div>
 
           <nav className="hidden md:flex items-center gap-4 text-sm font-semibold ml-auto text-zinc-700">
-            <NavLink to="/transport" className="inline-flex items-center gap-1.5 hover:text-orange-600" data-testid="nav-transport">
+            <NavLink to="/transport" className={({ isActive }) => `inline-flex items-center gap-1.5 ${isActive ? "text-orange-600" : "hover:text-orange-600"}`} data-testid="nav-transport">
               <Truck size={16} weight="duotone" /> Transport
             </NavLink>
-            <NavLink to="/my-orders" className="inline-flex items-center gap-1.5 hover:text-orange-600" data-testid="nav-my-orders">
+            <NavLink to="/helper" className={({ isActive }) => `inline-flex items-center gap-1.5 ${isActive ? "text-orange-600" : "hover:text-orange-600"}`} data-testid="nav-helper">
+              <Wrench size={16} weight="duotone" /> Helper
+            </NavLink>
+            <NavLink to="/watchlist" className={({ isActive }) => `inline-flex items-center gap-1.5 ${isActive ? "text-orange-600" : "hover:text-orange-600"}`} data-testid="nav-watchlist">
+              <Heart size={16} weight="duotone" /> Watchlist
+            </NavLink>
+            <NavLink to="/my-orders" className={({ isActive }) => `inline-flex items-center gap-1.5 ${isActive ? "text-orange-600" : "hover:text-orange-600"}`} data-testid="nav-my-orders">
               <Package size={16} weight="duotone" /> Orders
             </NavLink>
             <Link
