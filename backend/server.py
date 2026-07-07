@@ -16,6 +16,7 @@ from routers.marketplace import router as marketplace_router
 from routers.shop import router as shop_router, sync_router
 from routers.partner import delivery_router, collection_router
 from routers.payment import router as payment_router
+from routers.user import user_router, cart_router, notif_router
 
 logging.basicConfig(level=logging.INFO,
                      format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
@@ -44,6 +45,9 @@ app.include_router(sync_router)
 app.include_router(delivery_router)
 app.include_router(collection_router)
 app.include_router(payment_router)
+app.include_router(user_router)
+app.include_router(cart_router)
+app.include_router(notif_router)
 
 app.add_middleware(
     CORSMiddleware,

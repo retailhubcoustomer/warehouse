@@ -21,6 +21,7 @@ import { MyOrders, OrderDetail } from "@/pages/customer/Orders";
 import Transport from "@/pages/customer/Transport";
 import Helper from "@/pages/customer/Helper";
 import Watchlist from "@/pages/customer/Watchlist";
+import Account from "@/pages/customer/Account";
 
 import AdminOverview from "@/pages/admin/Overview";
 import LiveMap from "@/pages/admin/LiveMap";
@@ -62,6 +63,9 @@ function Router() {
         <Route path="/transport" element={<Transport />} />
         <Route path="/helper" element={<Helper />} />
         <Route path="/watchlist" element={<Watchlist />} />
+        <Route path="/account" element={
+          <ProtectedRoute><Account /></ProtectedRoute>
+        } />
         <Route path="/cart" element={<Cart />} />
         <Route path="/my-orders" element={
           <ProtectedRoute roles={["customer", "shop_owner", "super_admin",

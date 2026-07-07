@@ -1,13 +1,12 @@
 import React, { useEffect, useState } from "react";
 import { Link, NavLink, Outlet, useNavigate } from "react-router-dom";
-import { useAuth, dashboardPath } from "@/context/AuthContext";
+import { useAuth } from "@/context/AuthContext";
 import { useCart } from "@/context/CartContext";
 import api from "@/lib/api";
+import ProfileDropdown from "@/components/ProfileDropdown";
 import {
   ShoppingCart,
-  User,
   MapPin,
-  SignOut,
   CaretDown,
   Truck,
   Package,
@@ -16,9 +15,8 @@ import {
 } from "@phosphor-icons/react";
 
 export default function PublicLayout() {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const { count } = useCart();
-  const navigate = useNavigate();
   const [cities, setCities] = useState([]);
   const [cityId, setCityId] = useState(localStorage.getItem("shiplink_city") || "");
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -143,26 +141,7 @@ export default function PublicLayout() {
           </div>
 
           {user ? (
-            <div className="flex items-center gap-2">
-              <Link
-                to={dashboardPath(user.role)}
-                className="text-sm hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-zinc-200 hover:border-orange-400"
-                data-testid="nav-account"
-              >
-                <User size={14} /> {user.name?.split(" ")[0]}
-              </Link>
-              <button
-                data-testid="btn-logout"
-                onClick={async () => {
-                  await logout();
-                  navigate("/");
-                }}
-                className="text-sm inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full border border-zinc-200 hover:border-orange-400"
-                aria-label="Logout"
-              >
-                <SignOut size={14} />
-              </button>
-            </div>
+            <ProfileDropdown />
           ) : (
             <Link
               to="/login"

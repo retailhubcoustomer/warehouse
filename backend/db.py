@@ -40,6 +40,11 @@ async def ensure_indexes() -> None:
     await db.watchlist.create_index([("user_id", 1), ("entity_type", 1), ("entity_id", 1)],
                                       unique=True)
     await db.watchlist.create_index("user_id")
+    # cart / notifications / user_preferences
+    await db.carts.create_index("user_id", unique=True)
+    await db.notifications.create_index("user_id")
+    await db.notifications.create_index([("user_id", 1), ("read", 1)])
+    await db.user_preferences.create_index("user_id", unique=True)
 
 
 # ------------------ seed helpers ------------------

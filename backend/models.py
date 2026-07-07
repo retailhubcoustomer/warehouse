@@ -198,6 +198,48 @@ class ShopStatusUpdate(Base):
     status: Literal["open", "busy", "closed"]
 
 
+# ---------------- User profile / preferences / cart / notifications ----------------
+class ProfileUpdate(Base):
+    name: Optional[str] = None
+    phone: Optional[str] = None
+    address: Optional[str] = None
+    city_id: Optional[str] = None
+    lat: Optional[float] = None
+    lng: Optional[float] = None
+    picture: Optional[str] = None
+
+
+class PasswordChange(Base):
+    old_password: Optional[str] = None
+    new_password: str = Field(min_length=6)
+
+
+class UserPreferences(Base):
+    city_id: Optional[str] = None
+    notifications_email: bool = True
+    notifications_push: bool = True
+    marketing_opt_in: bool = False
+    language: str = "en"
+
+
+class CartItemIn(Base):
+    product_id: str
+    name: str
+    price: float
+    qty: int
+    image_url: Optional[str] = None
+
+
+class CartUpsert(Base):
+    shop_id: Optional[str] = None
+    shop_name: Optional[str] = None
+    items: List[CartItemIn] = Field(default_factory=list)
+
+
+class NotificationRead(Base):
+    ids: Optional[List[str]] = None  # None = mark all read
+
+
 # ---------------- Products ----------------
 class ProductCreate(Base):
     name: str

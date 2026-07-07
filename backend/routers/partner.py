@@ -32,6 +32,7 @@ async def delivery_history(user: dict = Depends(require_roles("delivery_partner"
 async def delivery_status(oid: str, body: dict,
                             user: dict = Depends(require_roles("delivery_partner"))):
     from db import db
+    from routers.user import push_notification
     status = body["status"]
     o = await db.orders.find_one({"order_id": oid, "delivery_partner_id": user["user_id"]})
     if not o:
@@ -42,6 +43,10 @@ async def delivery_status(oid: str, body: dict,
                                   "$push": {"timeline": {"at": now_utc().isoformat(),
                                                            "status": status,
                                                            "note": body.get("note") or f"Delivery: {status}"}}})
+    if status == "delivered":
+        await push_notification(o["customer_id"], "Order delivered 🎉",
+                                  f"Your order from {o['shop_name']} was delivered. Enjoy!",
+                                  "order", oid)
     return {"ok": True}
 
 

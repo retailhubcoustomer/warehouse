@@ -135,6 +135,12 @@ async def place_order(body: OrderCreate, user: dict = Depends(get_current_user))
     }
     await db.orders.insert_one(doc)
     doc.pop("_id", None)
+    # Notify customer
+    from routers.user import push_notification
+    await push_notification(user["user_id"],
+                              f"Order placed at {shop['name']}",
+                              f"We routed it to {warehouse['name']}. You'll get updates here.",
+                              "order", order_id)
     return doc
 
 

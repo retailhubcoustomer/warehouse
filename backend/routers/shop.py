@@ -122,6 +122,7 @@ async def shop_orders(status: Optional[str] = None,
 @router.post("/orders/{oid}/accept")
 async def shop_accept(oid: str, user: dict = Depends(require_roles("shop_owner"))):
     from db import db
+    from routers.user import push_notification
     sid = await _shop(user)
     o = await db.orders.find_one({"order_id": oid, "shop_id": sid})
     if not o:
@@ -132,6 +133,9 @@ async def shop_accept(oid: str, user: dict = Depends(require_roles("shop_owner")
                                  "$push": {"timeline": {"at": now_utc().isoformat(),
                                                           "status": "accepted",
                                                           "note": "Shop confirmed order"}}})
+    await push_notification(o["customer_id"], "Shop accepted your order",
+                              f"{o['shop_name']} is preparing your order.",
+                              "order", oid)
     return {"ok": True}
 
 
