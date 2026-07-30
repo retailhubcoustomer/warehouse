@@ -1,0 +1,5 @@
+[33mf765663[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m)[m local changes
+[33mdaa0fec[m[33m ([m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m Fix: remove pnpm files so Render uses npm instead
+[33m972736d[m Fix: use --no-cache-dir to force fresh httpx install
+[33mdf6dd34[m Fix: add missing httpx dependency
+[33m126bff9[m Add render.yaml for Render.com deployment
